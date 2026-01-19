@@ -1,0 +1,25 @@
+# Example contract for codegate
+# This demonstrates the structure and available rules
+
+rules:
+  build_import:
+    command: "python -m py_compile example_code.py"
+  
+  unit_tests:
+    command: "python -m pytest example_test.py -v"
+  
+  security_sast:
+    command: "echo 'SAST check would run here (e.g., bandit)'"
+    acceptable_exit_codes: [0]
+  
+  security_deps:
+    command: "echo 'Dependency check would run here (e.g., safety)'"
+    acceptable_exit_codes: [0]
+  
+  policy:
+    command: "echo 'Custom policy check would run here'"
+    acceptable_exit_codes: [0]
+  
+  quality:
+    command: "echo 'Quality check would run here (e.g., pylint, flake8)'"
+    acceptable_exit_codes: [0]

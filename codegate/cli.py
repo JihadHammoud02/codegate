@@ -49,7 +49,9 @@ def run(contract_file):
             click.secho(status, fg=status_color, bold=True)
             
             if status != 'PASS':
-                overall_status = status
+                # Prioritize FAIL over ERROR for overall status
+                if overall_status == 'PASS' or (status == 'FAIL' and overall_status == 'ERROR'):
+                    overall_status = status
                 if 'message' in result:
                     click.echo(f"  → {result['message']}")
         

@@ -3,7 +3,6 @@ Build/Import rule - validates that code can be imported/built successfully.
 """
 
 import subprocess
-import sys
 from pathlib import Path
 from typing import Dict, Any
 

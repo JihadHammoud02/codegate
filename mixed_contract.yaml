@@ -1,0 +1,7 @@
+# Contract with ERROR followed by FAIL
+rules:
+  build_import:
+    # This will cause an ERROR (no command)
+  
+  unit_tests:
+    command: "python -m py_compile nonexistent.py"

@@ -1,24 +1,39 @@
+\
 # CodeGate
 
-CodeGate is a contract-driven evaluator that runs deterministic build, test, security, policy, and quality gates on Python AI-generated code in isolated Docker containers.
+CodeGate is a **contract-driven evaluator** for Python projects.
+
+You describe what “good” looks like in a YAML contract (build checks, unit tests, security gates, policy rules), and CodeGate runs those gates **deterministically**—preferably inside **isolated Docker containers**—and produces a structured JSON report.
+
+It’s designed for evaluating **AI-generated code**, but it works for any Python project.
+
+## Why CodeGate
+
+- **Contract-first**: your evaluation rules live in versioned YAML, not hidden CI scripts.
+- **Reproducible**: the contract pins the runtime image + dependencies used for evaluation.
+- **Secure-by-default**: optional network isolation and restricted write access.
+- **Actionable output**: a single JSON report with per-rule details.
 
 ## Features
 
-- **Contract-based evaluation**: Define your quality gates in a YAML contract
-- **Docker isolation**: Run evaluations in isolated containers with controlled resources
-- **Security-first**: Built-in SAST scanning, dependency vulnerability checks, and policy enforcement
-- **Extensible rules**: Easy-to-add custom evaluation rules
-- **Detailed reporting**: Get comprehensive JSON reports of all checks
+- YAML contract schema with `Environment`, `project`, and `rules`
+- Docker dependency image built once per run (runtime + system deps + python deps)
+- Built-in rules for build/import checks, unit tests, SAST, dependency vulns, and policy enforcement
+- Extensible rule system (drop-in rule modules)
 
 ## Installation
 
 ```bash
-# Install from source
 pip install -e .
 
-# Install with development dependencies
+# Dev tools (tests, linters, etc.)
 pip install -e ".[dev]"
 ```
+
+### Requirements
+
+- Python $\ge 3.8$
+- Docker (recommended). Without Docker, some rules may be skipped or fail depending on your environment.
 
 ## Quick Start
 
@@ -131,6 +146,15 @@ codegate/
 ├── pyproject.toml
 └── requirements.txt
 ```
+
+For more detailed module documentation, see:
+
+- `codegate/README.md`
+- `codegate/engine/README.md`
+- `codegate/contract/README.md`
+- `codegate/rules/README.md`
+- `examples/README.md`
+- `docs/README.md`
 
 ## Contract Schema
 
@@ -249,6 +273,16 @@ Enforces custom policies by detecting forbidden:
 - Package usage
 - API calls
 
+## Security model (high level)
+
+When Docker is enabled, rules run inside containers with:
+
+- optional `--network=none` when `network_access: false`
+- the project mounted into `/workspace` (read-only for most rules)
+- resource limits (CPU/memory) to reduce blast radius
+
+**Note:** CodeGate is a safety tool, not a full sandbox. Treat untrusted code accordingly.
+
 ## CLI Commands
 
 ### Run Evaluation
@@ -269,6 +303,26 @@ codegate validate <contract.yaml>
 ```bash
 codegate --version
 ```
+
+## Docs
+
+Architecture diagrams (Mermaid) live in `docs/`:
+
+- `docs/sequence-diagram.md`
+- `docs/directory-structure.md`
+- `docs/class-diagram-rules.md`
+
+## Contributing
+
+PRs are welcome. If you’re adding a rule:
+
+1. Create a new module in `codegate/rules/` exporting a `Rule` class.
+2. Add tests under `tests/`.
+3. Document the rule’s contract config in the top-level README.
+
+## License
+
+MIT (see `LICENSE` if present).
 
 ## Examples
 

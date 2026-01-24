@@ -1,0 +1,115 @@
+{
+  "project": "calculator.py",
+  "artifact": {
+    "type": "docker-container",
+    "path": "/home/jihad/projects/codegate/examples/sample_project"
+  },
+  "summary": {
+    "total": 5,
+    "passed": 2,
+    "failed": 3,
+    "success_rate": 40.0,
+    "duration": 9.94
+  },
+  "results": [
+    {
+      "rule": "build_imports",
+      "passed": false,
+      "message": "Import failed: ModuleNotFoundError: No module named 'botom3'",
+      "details": {
+        "phases": {
+          "compilation": {
+            "success": true,
+            "error": null,
+            "files_compiled": 3
+          },
+          "entrypoint_import": {
+            "success": false,
+            "error": "ModuleNotFoundError: No module named 'botom3'",
+            "module_imported": null,
+            "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/local/lib/python3.9/importlib/__init__.py\", line 127, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n  File \"<frozen importlib._bootstrap>\", line 1030, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1007, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 986, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 680, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 850, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 228, in _call_with_frames_removed\n  File \"/workspace/calculator.py\", line 6, in <module>\n    from botom3 import client\nModuleNotFoundError: No module named 'botom3'\n",
+            "stdout": ""
+          }
+        },
+        "entry_point": "calculator.py",
+        "import_timeout": 120
+      },
+      "duration": 1.124
+    },
+    {
+      "rule": "unit_tests",
+      "passed": false,
+      "message": "Tests failed",
+      "details": {
+        "test_directory": "/home/jihad/projects/codegate/examples/sample_project",
+        "coverage_threshold": 80,
+        "tests_found": 1,
+        "tests_passed": 0,
+        "tests_failed": 0,
+        "coverage_percentage": 0.0,
+        "test_output": "============================= test session starts ==============================\nplatform linux -- Python 3.9.25, pytest-8.4.2, pluggy-1.6.0 -- /usr/local/bin/python\ncachedir: .pytest_cache\nrootdir: /workspace\nplugins: cov-7.0.0\ncollecting ... collected 0 items / 1 error\n\n==================================== ERRORS ====================================\n_____________________ ERROR collecting test_calculator.py ______________________\nImportError while importing test module '/workspace/test_calculator.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/local/lib/python3.9/importlib/__init__.py:127: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\ntest_calculator.py:5: in <module>\n    from calculator import add, multiply, greet\ncalculator.py:6: in <module>\n    from botom3 import client\nE   ModuleNotFoundError: No module named 'botom3'\n=========================== short test summary info ============================\nERROR test_calculator.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.35s ===============================\n"
+      },
+      "duration": 2.391
+    },
+    {
+      "rule": "security_sast",
+      "passed": true,
+      "message": "No security issues found",
+      "details": {
+        "scanner": "bandit",
+        "issues_found": 0,
+        "high_severity": 0,
+        "medium_severity": 0,
+        "low_severity": 0,
+        "issues": []
+      },
+      "duration": 1.81
+    },
+    {
+      "rule": "security_deps",
+      "passed": false,
+      "message": "Found 2 vulnerable dependencies",
+      "details": {
+        "scanner": "pip-audit",
+        "dependencies_checked": 4,
+        "vulnerabilities_found": 2,
+        "vulnerable_packages": [
+          {
+            "name": "filelock",
+            "version": "3.19.1",
+            "id": "GHSA-w853-jp5j-5j7f",
+            "description": "### Impact  A Time-of-Check-Time-of-Use (TOCTOU) race condition allows local attackers to corrupt or truncate arbitrary user files through symlink attacks. The vulnerability exists in both Unix and Wi"
+          },
+          {
+            "name": "filelock",
+            "version": "3.19.1",
+            "id": "GHSA-qmgc-5h2g-mvrw",
+            "description": "## Vulnerability Summary  **Title:** Time-of-Check-Time-of-Use (TOCTOU) Symlink Vulnerability in SoftFileLock  **Affected Component:** `filelock` package - `SoftFileLock` class **File:** `src/filelock"
+          }
+        ]
+      },
+      "duration": 4.309
+    },
+    {
+      "rule": "policy",
+      "passed": true,
+      "message": "No policy violations found",
+      "details": {
+        "forbidden_modules": [
+          "yaml",
+          "sklearn"
+        ],
+        "forbidden_packages": [
+          "boto3"
+        ],
+        "forbidden_apis": [
+          "os.system",
+          "subprocess.Popen"
+        ],
+        "violations": [],
+        "files_checked": 3
+      },
+      "duration": 0.002
+    }
+  ]
+}

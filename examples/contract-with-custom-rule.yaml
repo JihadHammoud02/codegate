@@ -1,0 +1,26 @@
+# Custom Rules Contract - Mix of standard and custom rules
+
+Environment:
+  runtime_image: python:3.10-slim
+  network_access: true
+  file_system_access: true
+
+project:
+  path: ./
+  entry_point: service.py
+
+rules:
+  build_imports:
+    enabled: true
+    import_timeout: 120
+  
+  policy:
+    enabled: true
+    forbidden_modules: ["yaml"]
+    forbidden_packages: []
+    forbidden_apis: []
+  
+  # Custom rule - will show warning but won't fail validation
+  custom_performance_check:
+    enabled: true
+    max_execution_time: 5000

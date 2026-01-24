@@ -1,0 +1,27 @@
+# Security-focused Contract - Only Security Rules
+
+Environment:
+  runtime_image: python:3.9-slim
+  network_access: false
+  file_system_access: false
+  allowed_writing_paths: ["/tmp"]
+
+project:
+  path: ./
+  entry_point: app.py
+  python_dependencies:
+    - flask>=2.0.0
+    - requests>=2.25.0
+
+rules:
+  security_sast:
+    enabled: true
+  
+  security_deps:
+    enabled: true
+  
+  policy:
+    enabled: true
+    forbidden_modules: ["pickle", "eval", "exec"]
+    forbidden_packages: ["crypto"]
+    forbidden_apis: ["os.system", "subprocess.call"]

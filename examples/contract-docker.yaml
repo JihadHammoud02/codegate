@@ -1,0 +1,24 @@
+# Example contract for a Docker-based project
+
+project:
+  name: my-docker-project
+  version: 1.0.0
+  description: Docker-based Python application
+
+artifact:
+  type: docker-image
+  path: ./
+  image: my-app
+
+rules:
+  # Build validation
+  syntax-check: true
+  
+  # Security scanning
+  security-scan:
+    enabled: true
+  
+  # Test execution in container
+  test-coverage:
+    enabled: true
+    min_coverage: 70

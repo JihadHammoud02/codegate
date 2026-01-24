@@ -1,0 +1,31 @@
+# Example contract for a Python package
+
+project:
+  name: my-python-project
+  version: 1.0.0
+  description: Example Python project evaluation
+
+artifact:
+  type: python-package
+  path: ./src
+
+rules:
+  # Syntax validation
+  syntax-check: true
+  
+  # Code linting
+  lint-check:
+    enabled: true
+  
+  # Type checking
+  type-check:
+    enabled: true
+  
+  # Test coverage
+  test-coverage:
+    enabled: true
+    min_coverage: 80
+  
+  # Security scanning
+  security-scan:
+    enabled: true

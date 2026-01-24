@@ -1,0 +1,20 @@
+# Testing-focused Contract - Only Unit Tests
+
+Environment:
+  runtime_image: python:3.11-slim
+  network_access: false
+  file_system_access: true
+  system_dependencies: ["git"]
+
+project:
+  path: ./
+  entry_point: main.py
+  python_dependencies:
+    - pytest>=7.0.0
+    - pytest-cov>=4.0.0
+
+rules:
+  unit_tests:
+    enabled: true
+    test_directory: tests/
+    coverage_threshold: 90

@@ -1,0 +1,26 @@
+# CodeGate Contract Example - Minimal Configuration
+
+Environment:
+  runtime_image: python:3.9-slim
+  network_access: false
+  file_system_access: false
+
+project:
+  path: ./
+  entry_point: main.py
+
+rules:
+  build_imports:
+    enabled: true
+  
+  unit_tests:
+    enabled: false
+  
+  security_sast:
+    enabled: true
+  
+  security_deps:
+    enabled: true
+  
+  policy:
+    enabled: false

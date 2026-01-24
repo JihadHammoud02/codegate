@@ -1,0 +1,15 @@
+# Test Contract - Only Build Imports Rule
+
+Environment:
+  runtime_image: python:3.9-slim
+  network_access: false
+  file_system_access: false
+
+project:
+  path: ./sample_project
+  entry_point: calculator.py
+
+rules:
+  build_imports:
+    enabled: true
+    import_timeout: 60

@@ -1,0 +1,31 @@
+{
+  "project": "python:3.9-slim",
+  "artifact": {
+    "type": "docker-container",
+    "path": "/home/jihad/projects/codegate/examples/sample_project"
+  },
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "success_rate": 100.0,
+    "duration": 0.09
+  },
+  "results": [
+    {
+      "rule": "build_imports",
+      "passed": true,
+      "message": "All imports resolved successfully",
+      "details": {
+        "import_timeout": 60,
+        "dependencies_checked": 0,
+        "imports_tested": [
+          "calculator",
+          "calculator",
+          "__init__"
+        ]
+      },
+      "duration": 0.089
+    }
+  ]
+}

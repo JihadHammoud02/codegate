@@ -1,0 +1,13 @@
+# Empty Rules Contract - No rules enabled
+# This is valid and will just prepare the environment
+
+Environment:
+  runtime_image: python:3.9-slim
+  network_access: false
+  file_system_access: false
+
+project:
+  path: ./
+  entry_point: main.py
+
+rules: {}

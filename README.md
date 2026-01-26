@@ -1,324 +1,354 @@
-# CodeGate
+# Codegate
 
-**CodeGate** is a **contract-driven evaluator for Python code**.
+> **A contract-driven observatory for evaluating LLM-generated code — before humans review it.**
 
-You define *what “acceptable code” means* in a YAML contract (environment, tests, security, policies).
-CodeGate executes those rules **deterministically**, usually inside an **isolated Docker container**, and produces a **machine-readable JSON verdict**.
+Codegate is a **developer-first evaluation engine** designed to *systematically assess AI‑generated code* against **explicit, user-defined contracts**. Instead of asking *“does this code look good?”*, Codegate answers a much more useful question:
 
-Built for **AI-generated code**, but works for any Python project.
+> **“Does this code satisfy *****my***** constraints, in *****my***** environment, with evidence?”**
 
----
+This project is intentionally opinionated, minimal, and infra-oriented. It is not a chatbot, not a prompt optimizer, and not a benchmark. It is a **verification layer**.
 
-## Why CodeGate
-
-- **Contracts over vibes** — success is explicit, versioned, and reviewable.
-- **Reproducible** — evaluation runs in a pinned runtime image.
-- **Explainable failures** — every failure includes concrete evidence.
-- **One command** — build, test, scan, and policy-check in one run.
-
-> CodeGate does not judge *style* or *quality*.
-> It answers one question: **“Does this code satisfy the contract?”**
+**Codegate is not a replacement for human code review**: it exists to automate well-defined verification steps and surface objective evidence, so human reviewers can focus their expertise where it matters most.
 
 ---
 
-## How It Works (Mental Model)
+## Project Information
 
-```text
-(YAML Contract)
-      ↓
-[ Isolated Runtime ]
-      ↓
-[ Deterministic Rules ]
-      ↓
-Structured JSON Verdict
-```
+### Project name
+
+**Codegate**
+
+### Short description
+
+A contract-based evaluation engine that validates LLM-generated code using declarative rules, isolated execution, and explainable failure reports.
+
+### Main purpose / problem solved
+
+LLM-generated code is increasingly used, but **cannot be trusted by default**:
+
+- It may compile but violate hidden constraints
+- It may pass tests but use forbidden APIs
+- It may work locally but fail in the target environment
+- It may be insecure, non-compliant, or unreviewable at scale
+
+Codegate solves this by introducing a **Code Success Contract**: a machine-readable specification that defines *what success means* **before** code is reviewed by a human.
 
 ---
 
-## Install
+## Target Users
+
+- **Software engineers** validating AI-generated pull requests
+- **AI / platform engineers** building LLM-based developer tooling
+- **Security & reliability engineers** enforcing policy on generated code
+- **Researchers** studying LLM failure modes in code generation
+
+If you care about **correctness, reproducibility, security, or explainability**, this tool is for you.
+
+---
+
+## Tech Stack / Language
+
+- **Language:** Python 3.10+
+- **Execution:** Docker (sandboxed, network-restricted)
+- **Config:** YAML (human-readable contracts)
+- **Testing:** pytest / custom runners
+- **Static analysis:** AST parsing, regex rules, optional linters
+
+No model inference. No prompt engineering. Pure evaluation.
+
+---
+
+## Main Features
+
+- **Declarative success contracts** (`.yaml`)
+- **One-command evaluation** of generated code
+- **Isolated Docker execution** (env parity, no network)
+- **Static policy enforcement** (forbidden modules, APIs, packages)
+- **Test-based behavioral validation**
+- **Explainable failure reports** with evidence
+- **Clear outcome classification** (success / soft fail / hard fail / uncertain)
+
+---
+
+## Installation
 
 ```bash
+pip install codegate
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/<your-username>/codegate.git
+cd codegate
 pip install -e .
-
-# Dev tools (tests, linters, etc.)
-pip install -e ".[dev]"
 ```
 
-### Requirements
+Requirements:
 
-- Python $\ge 3.8$
-- Docker (recommended). Without Docker, some rules may be skipped or fail depending on your environment.
+- Python 3.10+
+- Docker (running)
 
 ---
 
-## Quick Start
+## Usage Examples
 
-### 1) Define a Contract
-
-```yaml
-Environment:
-  runtime_image: python:3.9-slim
-  network_access: false
-
-project:
-  path: ./
-
-rules:
-  build_imports:
-    enabled: true
-
-  unit_tests:
-    enabled: true
-    coverage_threshold: 80
-
-  security_sast:
-    enabled: true
-
-  policy:
-    enabled: true
-    forbidden_apis: ["eval", "exec", "os.system"]
-```
-
-### 2) Run
+### Basic command
 
 ```bash
-codegate run contract.yaml
+codegate run \
+  --code ./generated_code \
+  --contract ./contract.yaml
 ```
 
-### 3) Get a Verdict
+This single command will:
 
-```json
-{
-  "summary": {
-    "passed": 3,
-    "failed": 1,
-    "success_rate": 75.0
-  },
-  "results": [
-    {
-      "rule": "policy",
-      "passed": false,
-      "message": "Forbidden API used: eval",
-      "evidence": {
-        "file": "main.py",
-        "line": 42
-      }
-    }
-  ]
-}
-```
+1. Build an isolated execution environment
+2. Compile / import the code
+3. Run tests
+4. Enforce security & policy rules
+5. Produce a structured evaluation report
 
 ---
 
-## Contract Sections (Minimal)
+## YAML Contract Schema (Core Abstraction)
 
-### Environment
+The **contract** defines success. Nothing is implicit.
 
-Defines *where* code is evaluated.
-
-```yaml
-Environment:
-  runtime_image: python:3.10-slim
-  network_access: false
-```
-
-**Failure example**
-
-- Code tries to call an external API → **blocked network syscall**
-
----
-
-### Project
-
-Defines *what* is evaluated.
+### Example: `contract.yaml`
 
 ```yaml
 project:
-  path: ./
-  entry_point: main.py
-  python_dependencies:
-    - requests>=2.25
+  language: python
+  python_version: "3.11"
+
+execution:
+  docker:
+    base_image: python:3.11-slim
+    network_access: false
+    timeout_seconds: 30
+
+policy:
+
+  forbidden_packages:
+    - pyyaml
+    - pycryptodome
+    - scikit-learn
+
+  forbidden_apis:
+    - eval
+    - exec
+    - os.system
+    - subprocess.Popen
+    - importlib.import_module
+
+tests:
+  framework: pytest
+  path: tests/
+
+success_criteria:
+  require_all_tests_pass: true
+  max_warnings: 0
 ```
 
-**Failure example**
+### Design principles
 
-- Missing dependency → `ImportError: No module named requests`
+- **Declarative, not procedural**
+- **Readable by humans**
+- **Extensible but minimal**
+- **Auditable**
 
 ---
 
 ## Rules (Core of CodeGate)
 
-Rules are **independent** and **opt-in**.
+Rules are **independent**, **opt‑in**, and evaluated in isolation. Each rule represents a distinct failure mode commonly observed in LLM‑generated code. Together, they act as *quality gates* that catch issues **before** human review.
 
 ---
 
 ### `build_imports`
 
-Verifies all imports resolve.
+**Definition:** Verifies that all imports resolve correctly in the target environment.
 
-```yaml
-build_imports:
-  enabled: true
-```
+**Why it matters:** LLM‑generated code frequently references packages, modules, or transitive dependencies that do not exist in the actual runtime. These failures are trivial but costly when discovered late.
 
-**Fails when**
+**Example:** A model imports `requests_cache` because it appeared in training data, but the dependency is not allowed or installed. `build_imports` fails fast, preventing wasted debugging time.
+
+**Typical failures caught:**
 
 - Missing dependency
 - Circular import crash
-- Import timeout
-
-**Evidence**
-
-- Python traceback
-- Module name that failed
+- Import hang or timeout
 
 ---
 
 ### `unit_tests`
 
-Runs tests and enforces coverage.
+**Definition:** Executes the project’s test suite and optionally enforces a coverage threshold.
 
-```yaml
-unit_tests:
-  enabled: true
-  coverage_threshold: 85
-```
+**Why it matters:** Passing tests remain the strongest signal of behavioral correctness, especially when humans did not write the code.
 
-**Fails when**
+**Example:** Generated code passes basic functionality but fails edge‑case tests or silently reduces coverage. This rule ensures regressions are explicit and measurable.
 
-- Any test fails
-- Coverage < threshold
+**Typical failures caught:**
 
-**Evidence**
-
-- Failing test names
-- Coverage report
+- Failing assertions
+- Untested code paths
+- Behavior drift masked by partial test success
 
 ---
 
 ### `security_sast`
 
-Static security analysis (Bandit).
+**Definition:** Performs static application security testing using tools like Bandit.
 
-```yaml
-security_sast:
-  enabled: true
-```
+**Why it matters:** LLMs may generate insecure patterns that *work correctly* but introduce severe vulnerabilities.
 
-**Fails when**
+**Example:** Code uses `pickle.loads` for convenience. Tests pass, but `security_sast` flags this as unsafe deserialization with a precise rule ID and location.
 
-- Use of `eval`, `pickle`, weak crypto, etc.
+**Typical failures caught:**
 
-**Evidence**
-
-- Rule ID (e.g. `B307`)
-- File + line number
+- Use of `eval` / `exec`
+- Insecure cryptography
+- Unsafe serialization
 
 ---
 
 ### `security_deps`
 
-Checks dependencies for known CVEs.
+**Definition:** Scans declared dependencies for known vulnerabilities (CVEs).
 
-```yaml
-security_deps:
-  enabled: true
-```
+**Why it matters:** Even correct code becomes a liability if it depends on vulnerable libraries.
 
-**Fails when**
+**Example:** Generated code introduces `urllib3<1.26`. Tests pass, but the dependency scan detects a high‑severity CVE and blocks integration.
 
-- Vulnerable dependency detected
+**Typical failures caught:**
 
-**Evidence**
-
-- Package name
-- CVE ID
-- Severity
+- Known vulnerable packages
+- High‑severity transitive CVEs
 
 ---
 
 ### `policy`
 
-Hard usage constraints.
+**Definition:** Enforces hard organizational constraints on packages and APIs.
 
-```yaml
-policy:
-  enabled: true
-  forbidden_modules: ["subprocess"]
-  forbidden_packages: ["boto3"]
-  forbidden_apis: ["os.system", "eval"]
-```
+**Why it matters:** Some constraints are non‑negotiable and cannot be inferred from tests alone.
 
-**Fails when**
+**Example:** Even if code works perfectly, importing `subprocess` or calling `os.system` may violate sandboxing or compliance rules. The policy gate encodes these rules explicitly.
 
-- Forbidden import
-- Forbidden API call
-- Forbidden dependency installed
+**Typical failures caught:**
 
-**Evidence**
-
-- File, line, symbol name
+- Forbidden API usage
+- Disallowed dependencies
 
 ---
 
-## Rule Outcomes
+**Key idea:** Each rule targets a *different dimension of risk* — correctness, security, compliance, or reliability.
 
-Each rule produces one of:
-
-- **PASS** — contract satisfied
-- **FAIL** — contract violated (with evidence)
-- **SKIPPED** — disabled or unsupported
-- **ERROR** — evaluator failure (tooling issue)
-
-Final outcome is derived from rule results, not heuristics.
+By enforcing these gates automatically, CodeGate ensures that human reviewers spend their time on **design, intent, and maintainability**, not on catching avoidable failures.
 
 ---
 
-## Security Model (Important)
+## Project Structure
 
-When Docker is enabled:
+```text
+codegate/
+  cli.py                 # `codegate` entrypoint + `run` subcommand
+  contract/
+    parser.py            # YAML loading
+    schema.py            # contract validation (types, required fields)
+  engine/
+    runner.py            # orchestration: build deps image once, run enabled rules
+    docker_runner.py     # docker build/run helpers (network + mounts + limits)
+    result.py            # RuleResult / EvaluationResult -> JSON
+  rules/
+    base.py              # rule interface
+    build_imports.py     # compile + import checks (docker)
+    unit_tests.py        # pytest execution + parsing (docker)
+    security_sast.py     # bandit scanning (docker)
+    security_deps.py     # pip-audit / safety (docker)
+    policy.py            # local AST policy: forbidden packages + APIs
 
-- Optional `--network=none`
-- Read-only project mount
-- Limited write paths
-- Resource limits
-
-⚠️ **Not a sandbox**. Still treat untrusted code carefully.
-
----
-
-## CLI
-
-```bash
-codegate run contract.yaml
-codegate validate contract.yaml
-codegate --version
+tests/
+  ...                    # unit + integration tests (docker interactions mocked)
+docs/
+  ...                    # diagrams + design notes
 ```
 
 ---
 
-## Docs / Architecture
+## How It Runs (Technical Design)
 
-- Diagrams: `docs/README.md`
-- Package overview: `codegate/README.md`
-- Engine: `codegate/engine/README.md`
-- Contracts: `codegate/contract/README.md`
-- Rules: `codegate/rules/README.md`
-- Examples: `examples/README.md`
+At a high level, Codegate executes your contract as a **pipeline of rules** and produces a single JSON report.
+
+### 1) Parse + validate the contract
+
+- The CLI loads your YAML file.
+- The contract is validated (required fields, types, rule-specific config).
+
+### 2) Build a reusable dependency image (Docker)
+
+For Docker-based rules, Codegate builds **one** dependency image per evaluation:
+
+- Starts from `Environment.runtime_image`
+- Installs optional system packages from `Environment.system_dependencies`
+- Installs Python deps from:
+  - `project.python_dependencies`
+  - and optional `requirements.txt` in the project folder
+
+This image is cached by a hash of the config so repeated runs are fast.
+
+### 3) Execute enabled rules
+
+Rules are executed independently and contribute results to the final report.
+
+- Docker-based rules run inside the dependency image, with:
+  - optional network isolation (`Environment.network_access: false` → `--network=none`)
+  - workspace mounted at `/workspace`
+- The `policy` rule runs locally (static AST scan) to keep it fast and deterministic.
+
+### 4) Emit a structured report
+
+The output includes:
+
+- per-rule pass/fail + message
+- details/evidence (parsed tool output)
+- a summary with totals + timing
+
+This report is meant to be consumed by:
+
+- humans (review evidence)
+- automation (gate merges, fail CI, research analysis)
+
+
 
 ---
 
-## What CodeGate Is *Not*
+## Outcome Classification
 
-- ❌ A code generator
-- ❌ A prompt optimizer
-- ❌ A style or lint judge
-- ❌ A replacement for human review
+Codegate reports results as **per-rule outcomes** plus an overall summary.
 
-It is an **automated gate**, not an approval stamp.
+Practically, you can interpret results using the following classification:
+
+- **Success**: all enabled rules passed.
+- **Hard fail**: one or more enabled rules failed (e.g. tests failed, forbidden dependency used, vulnerability found).
+- **Uncertain / skipped checks**: a rule may report that it was skipped because a tool isn’t available (for example: no scanner installed inside the image). This is still a *pass* for the rule, but the report will include a warning/detail so you can decide if “skipped” is acceptable in your environment.
+
+In other words:
+
+- A clean pass means “contract satisfied”.
+- A fail means “contract violated”.
+- A skip means “not enough evidence to evaluate that check”, and you can tighten the environment/contract to prevent skipping.
+
+
 
 ---
 
-## License
 
-MIT
+## Status
+
+🚧 **Beta — actively evolving**
+
+Feedback from engineers, researchers, and infra-minded people is highly welcome.
+

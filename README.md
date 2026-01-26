@@ -46,18 +46,6 @@ If you care about **correctness, reproducibility, security, or explainability**,
 
 ---
 
-## Tech Stack / Language
-
-- **Language:** Python 3.10+
-- **Execution:** Docker (sandboxed, network-restricted)
-- **Config:** YAML (human-readable contracts)
-- **Testing:** pytest / custom runners
-- **Static analysis:** AST parsing, regex rules, optional linters
-
-No model inference. No prompt engineering. Pure evaluation.
-
----
-
 ## Main Features
 
 - **Declarative success contracts** (`.yaml`)
@@ -72,11 +60,7 @@ No model inference. No prompt engineering. Pure evaluation.
 
 ## Installation
 
-```bash
-pip install codegate
-```
-
-Or from source:
+from source:
 
 ```bash
 git clone https://github.com/<your-username>/codegate.git
@@ -96,9 +80,7 @@ Requirements:
 ### Basic command
 
 ```bash
-codegate run \
-  --code ./generated_code \
-  --contract ./contract.yaml
+codegate run ./contract.yaml --verbose
 ```
 
 This single command will:
@@ -118,47 +100,43 @@ The **contract** defines success. Nothing is implicit.
 ### Example: `contract.yaml`
 
 ```yaml
+# CodeGate Contract - Sample Calculator Project
+
+Environment:
+  runtime_image: python:3.9-slim
+  network_access: false
+  system_dependencies: ["build-essential", "libssl-dev"]
+
 project:
-  language: python
-  python_version: "3.11"
+  path: ./
+  entry_point: calculator.py
+  python_dependencies:
+    - pytest>=7.0.0
+    - pytest-cov>=4.0.0
+    - bandit>=1.7.0
+    - pip-audit>=2.0.0
 
-execution:
-  docker:
-    base_image: python:3.11-slim
-    network_access: false
-    timeout_seconds: 30
+rules:
+  build_imports:
+    enabled: true
+    import_timeout: 120
 
-policy:
-
-  forbidden_packages:
-    - pyyaml
-    - pycryptodome
-    - scikit-learn
-
-  forbidden_apis:
-    - eval
-    - exec
-    - os.system
-    - subprocess.Popen
-    - importlib.import_module
-
-tests:
-  framework: pytest
-  path: tests/
-
-success_criteria:
-  require_all_tests_pass: true
-  max_warnings: 0
+  unit_tests:
+    enabled: true
+    test_directory: ./
+    coverage_threshold: 80
+  
+  security_sast:
+    enabled: true
+  
+  security_deps:
+    enabled: true
+  
+  policy:
+    enabled: true
+    forbidden_packages: ["boto3"]
+    forbidden_apis: ["os.system", "subprocess.Popen"]
 ```
-
-### Design principles
-
-- **Declarative, not procedural**
-- **Readable by humans**
-- **Extensible but minimal**
-- **Auditable**
-
----
 
 ## Rules (Core of CodeGate)
 
@@ -321,30 +299,7 @@ This report is meant to be consumed by:
 - humans (review evidence)
 - automation (gate merges, fail CI, research analysis)
 
-
-
 ---
-
-## Outcome Classification
-
-Codegate reports results as **per-rule outcomes** plus an overall summary.
-
-Practically, you can interpret results using the following classification:
-
-- **Success**: all enabled rules passed.
-- **Hard fail**: one or more enabled rules failed (e.g. tests failed, forbidden dependency used, vulnerability found).
-- **Uncertain / skipped checks**: a rule may report that it was skipped because a tool isn’t available (for example: no scanner installed inside the image). This is still a *pass* for the rule, but the report will include a warning/detail so you can decide if “skipped” is acceptable in your environment.
-
-In other words:
-
-- A clean pass means “contract satisfied”.
-- A fail means “contract violated”.
-- A skip means “not enough evidence to evaluate that check”, and you can tighten the environment/contract to prevent skipping.
-
-
-
----
-
 
 ## Status
 

@@ -1,18 +1,19 @@
-# CodeGate Contract - Sample Calculator Project
+# CodeGate Contract - Bigger example project
 
 Environment:
-  runtime_image: python:3.9-slim
+  runtime_image: python:3.11-slim
   network_access: false
-  system_dependencies: ["build-essential", "libssl-dev"]
+  system_dependencies: ["build-essential"]
 
 project:
   path: ./
-  entry_point: calculator.py
+  entry_point: big_project/cli.py
   python_dependencies:
     - pytest>=7.0.0
     - pytest-cov>=4.0.0
     - bandit>=1.7.0
     - pip-audit>=2.0.0
+    - requests>=2.31.0
 
 rules:
   build_imports:
@@ -21,21 +22,16 @@ rules:
 
   unit_tests:
     enabled: true
-    test_directory: ./
-    coverage_threshold: 80
-  
+    test_directory: tests/
+    coverage_threshold: 75
+
   security_sast:
     enabled: true
-  
+
   security_deps:
     enabled: true
-  
+
   policy:
     enabled: true
-    forbidden_modules: ["yaml", "sklearn"]
-    forbidden_packages: ["boto3"]
-    forbidden_apis: ["os.system", "subprocess.Popen"]
-
-
-
-
+    forbidden_modules: ["subprocess"]
+    forbidden_apis: ["os.system", "eval", "exec"]

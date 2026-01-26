@@ -64,6 +64,7 @@ class Rule(BaseRule):
         project_path = Path(artifact_info.get("absolute_path", ""))
         network_access = artifact_info.get("network_access", False)
         
+        
         details = {
             "test_directory": self.test_directory,
             "coverage_threshold": self.coverage_threshold,
@@ -94,13 +95,15 @@ class Rule(BaseRule):
         if not test_dir.exists():
             return False, f"Test directory not found: {self.test_directory}", details
         
-        # Count test files
+        # Count test *files* recursively (best-effort). Note: pytest can collect multiple
+        # tests from a single file, so this is not necessarily equal to the number of tests.
         test_files = [
             p
-            for p in (list(test_dir.glob("test_*.py")) + list(test_dir.glob("*_test.py")))
+            for p in (list(test_dir.rglob("test_*.py")) + list(test_dir.rglob("*_test.py")))
             if not any(part in self.EXCLUDE_DIRS for part in p.parts)
         ]
-        details["tests_found"] = len(test_files)
+        # Keep tests_found as "number of collected tests" below (parsed from pytest output)
+        details["tests_found"] = 0
         
         if not test_files:
             return False, "No test files found", details
@@ -130,6 +133,14 @@ class Rule(BaseRule):
             
             output = proc.stdout + proc.stderr
             details["test_output"] = output[-2000:]
+
+            # Prefer reporting the resolved directory (avoids leaking host absolute paths)
+            details["test_directory"] = test_dir_rel or "./"
+
+            # Parse number of collected tests
+            collected_match = re.search(r"collected\s+(\d+)\s+items", output)
+            if collected_match:
+                details["tests_found"] = int(collected_match.group(1))
             
             # Parse test results
             passed_match = re.search(r'(\d+) passed', output)

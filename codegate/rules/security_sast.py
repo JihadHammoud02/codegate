@@ -60,12 +60,6 @@ class Rule(BaseRule):
             "issues": []
         }
         
-        # Validate prerequisites
-        if not docker_runner or not deps_image:
-            return False, "Docker not available or deps image not built", details
-        
-        if not project_path.exists():
-            return False, f"Project path not found: {project_path}", details
         
         try:
             # Run bandit security scan

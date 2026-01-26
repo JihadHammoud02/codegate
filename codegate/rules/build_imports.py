@@ -58,6 +58,7 @@ class Rule(BaseRule):
         entry_point = artifact_info.get("entry_point", "")
         network_access = artifact_info.get("network_access", False)
         
+        
         details = {
             "phases": {},
             "entry_point": entry_point,
@@ -65,8 +66,6 @@ class Rule(BaseRule):
         }
         
         # Validate prerequisites
-        if not docker_runner or not deps_image:
-            return False, "Docker not available or deps image not built", details
         
         if not project_path.exists():
             return False, f"Project path not found: {project_path}", details
@@ -186,12 +185,6 @@ class Rule(BaseRule):
             "module_imported": None,
         }
         
-        # No entry point = skip this phase
-        if not entry_point:
-            result["success"] = True
-            result["note"] = "No entry point specified, skipped import test"
-            return result
-        
         # Convert file path to module name
         # e.g., "src/app.py" -> "src.app"
         module_name = entry_point.replace(".py", "").replace("/", ".").replace("\\", ".")
@@ -226,19 +219,9 @@ class Rule(BaseRule):
     def _parse_compile_error(self, output: str) -> str:
         """Extract meaningful error from compilation output."""
         lines = output.strip().split('\n')
-        for line in lines:
-            if "SyntaxError" in line or "IndentationError" in line:
-                return line.strip()
-            if "Error" in line:
-                return line.strip()
         return output[-300:] if len(output) > 300 else output
     
     def _parse_import_error(self, output: str, module_name: str) -> str:
         """Extract meaningful error from import output."""
         lines = output.strip().split('\n')
-        for line in lines:
-            if "ModuleNotFoundError" in line or "ImportError" in line:
-                return line.strip()
-            if "No module named" in line:
-                return line.strip()
         return f"Failed to import '{module_name}'"

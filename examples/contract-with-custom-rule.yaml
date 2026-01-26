@@ -3,7 +3,6 @@
 Environment:
   runtime_image: python:3.10-slim
   network_access: true
-  file_system_access: true
 
 project:
   path: ./

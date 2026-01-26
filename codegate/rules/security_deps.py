@@ -56,13 +56,7 @@ class Rule(BaseRule):
             "vulnerabilities_found": 0,
             "vulnerable_packages": []
         }
-        
-        # Validate prerequisites
-        if not docker_runner or not deps_image:
-            return False, "Docker not available or deps image not built", details
-        
-        if not project_path.exists():
-            return False, f"Project path not found: {project_path}", details
+    
         
         try:
             # Try pip-audit first
@@ -77,12 +71,7 @@ class Rule(BaseRule):
                         f"Found {result['vulnerabilities_found']} vulnerable dependencies"
                     ), details
                 return True, "No vulnerable dependencies found", details
-            
-            # Try safety as fallback
-            result = self._run_safety(
-                docker_runner, deps_image, project_path, network_access
-            )
-            
+
             if result["scanner"]:
                 details.update(result)
                 if result["vulnerabilities_found"] > 0:
@@ -144,54 +133,6 @@ class Rule(BaseRule):
                     
         except json.JSONDecodeError:
             # If returncode is 0 and no JSON, likely no vulnerabilities
-            if proc.returncode == 0:
-                pass  # No vulnerabilities found
-        
-        return result
-    
-    def _run_safety(
-        self,
-        docker_runner,
-        deps_image: str,
-        project_path: Path,
-        network_access: bool
-    ) -> Dict[str, Any]:
-        """Run safety vulnerability scanner."""
-        result = {
-            "scanner": None,
-            "vulnerabilities_found": 0,
-            "vulnerable_packages": []
-        }
-        
-        proc = docker_runner.run_command(
-            image=deps_image,
-            command=["python", "-m", "safety", "check", "--json"],
-            project_path=project_path,
-            network_access=True,  # safety needs network
-            timeout=self.timeout
-        )
-        
-        # Check if safety is installed
-        if "No module named" in proc.stderr:
-            return result  # Scanner not available
-        
-        result["scanner"] = "safety"
-        
-        try:
-            safety_data = json.loads(proc.stdout)
-            
-            # safety returns list of vulnerabilities
-            if isinstance(safety_data, list):
-                for vuln in safety_data:
-                    result["vulnerabilities_found"] += 1
-                    result["vulnerable_packages"].append({
-                        "name": vuln[0] if len(vuln) > 0 else "unknown",
-                        "version": vuln[2] if len(vuln) > 2 else "unknown",
-                        "id": vuln[3] if len(vuln) > 3 else "",
-                        "description": vuln[4][:200] if len(vuln) > 4 else ""
-                    })
-                    
-        except json.JSONDecodeError:
             if proc.returncode == 0:
                 pass  # No vulnerabilities found
         

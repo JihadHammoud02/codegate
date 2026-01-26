@@ -3,7 +3,6 @@
 Environment:
   runtime_image: python:3.11-slim
   network_access: false
-  file_system_access: true
   system_dependencies: ["git"]
 
 project:

@@ -8,7 +8,7 @@ utilities to run commands in sandboxed containers.
 Responsibilities:
 - Build deps image with system + Python dependencies
 - Run arbitrary commands in containers with proper isolation
-- Handle network/filesystem restrictions from contract
+- Handle network restrictions from contract
 """
 
 import subprocess
@@ -79,7 +79,7 @@ class DockerRunner:
         Build a dependency image with all required packages.
         
         This creates a reusable image with:
-        - Base runtime image (e.g., python:3.9-slim)
+        - Base runtime image
         - System dependencies (apt packages)
         - Python dependencies (pip packages)
         
@@ -122,6 +122,7 @@ class DockerRunner:
             
             # Gather requirements
             requirements_content = ""
+            # Read existing requirements.txt if present
             if project_path:
                 req_file = project_path / "requirements.txt"
                 if req_file.exists():
@@ -182,8 +183,6 @@ class DockerRunner:
         writable: bool = False,
         environment: Optional[Dict[str, str]] = None,
         timeout: int = 120,
-        memory_limit: str = "512m",
-        cpu_limit: str = "1"
     ) -> subprocess.CompletedProcess:
         """
         Run a command in a Docker container.
@@ -210,51 +209,29 @@ class DockerRunner:
         if not network_access:
             cmd.append("--network=none")
         
-        # Resource limits
-        cmd.extend([
-            f"--memory={memory_limit}",
-            f"--cpus={cpu_limit}",
-        ])
         
         # Mount project directory
         if project_path:
             mount_mode = "rw" if writable else "ro"
             cmd.extend(["-v", f"{project_path.resolve()}:{self.WORKSPACE_PATH}:{mount_mode}"])
-        
-        # Working directory
-        cmd.extend(["-w", self.WORKSPACE_PATH])
-        
-        # Set PYTHONPATH for imports
-        cmd.extend(["-e", f"PYTHONPATH={self.WORKSPACE_PATH}"])
-        
-        # Additional environment variables
+
+        # Environment variables
         if environment:
-            for key, value in environment.items():
-                cmd.extend(["-e", f"{key}={value}"])
-        
-        # Image and command
+            for k, v in environment.items():
+                cmd.extend(["-e", f"{k}={v}"])
+
+        # Command to run
         cmd.append(image)
         cmd.extend(command)
-        
-        if self.verbose:
-            print(f"    Container cmd: {' '.join(cmd)}")
-        
-        result = subprocess.run(
+
+        # Execute
+        return subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=timeout
+            timeout=timeout,
         )
-        
-        if self.verbose:
-            print(f"    Exit code: {result.returncode}")
-        
-        return result
-    
-    def get_deps_image(self) -> Optional[str]:
-        """Get the current deps image tag."""
-        return self._deps_image
-    
+
     def cleanup_image(self, image_tag: str) -> bool:
         """Remove a Docker image."""
         try:

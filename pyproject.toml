@@ -47,6 +47,27 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
+# Enable coverage for subprocesses (used by the big end-to-end CLI test)
+addopts = [
+    "--cov=codegate",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+]
+
+[tool.coverage.run]
+parallel = true
+branch = true
+source = ["codegate"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.coverage.paths]
+source = [
+    "codegate",
+    "*/codegate",
+]
+
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true

@@ -1,9 +1,16 @@
-"""
-Policy rule - enforce forbidden modules, packages, and APIs.
+"""Policy rule - enforce forbidden packages and APIs.
+
+Policy focuses on *static* checks that don't require Docker:
+
+- Forbidden *packages* (distribution names, i.e. what you `pip install`)
+- Forbidden API calls (e.g. `eval`, `pickle.loads`)
+
+Important: Users specify forbidden packages using the **distribution name**.
+We do not compare against import top-level module names.
 """
 
 import ast
-import sys
+import importlib.metadata
 from pathlib import Path
 from typing import Dict, Any, Tuple, List, Set
 
@@ -18,8 +25,7 @@ class Rule(BaseRule):
         Execute policy enforcement.
         
         Checks for:
-        - Forbidden module imports
-        - Forbidden package usage
+        - Forbidden package usage (distribution names)
         - Forbidden API calls
         
         This rule performs static AST analysis locally (no Docker needed).
@@ -31,25 +37,27 @@ class Rule(BaseRule):
             Tuple of (passed, message, details)
         """
         project_path = artifact_info.get("absolute_path") or artifact_info.get("project_path", "")
-        
-        forbidden_modules = self.config.get("forbidden_modules", [])
-        forbidden_packages = self.config.get("forbidden_packages", [])
+        project_dir = Path(project_path)
+
+        # Users provide distribution names (what you `pip install`).
+        forbidden_packages: Set[str] = {
+            p for p in self.config.get("forbidden_packages", []) if isinstance(p, str) and p.strip()
+        }
         forbidden_apis = self.config.get("forbidden_apis", [])
+
+        pkg_map = importlib.metadata.packages_distributions()
+
+        used_distributions: Set[str] = set()
         
         details = {
-            "forbidden_modules": forbidden_modules,
-            "forbidden_packages": forbidden_packages,
+            "forbidden_packages": sorted(forbidden_packages),
             "forbidden_apis": forbidden_apis,
+            "used_distributions": [],
             "violations": [],
             "files_checked": 0
         }
         
         try:
-            project_dir = Path(project_path)
-            
-            if not project_dir.exists():
-                return False, f"Project path not found: {project_path}", details
-            
             # Find all Python files
             python_files = list(project_dir.rglob("*.py"))
             details["files_checked"] = len(python_files)
@@ -65,9 +73,7 @@ class Rule(BaseRule):
                     tree = ast.parse(content, filename=str(py_file))
                     
                     # Check for forbidden imports
-                    file_violations = self._check_imports(
-                        tree, py_file, forbidden_modules, forbidden_packages
-                    )
+                    file_violations = self._check_imports(tree, py_file, forbidden_packages, used_distributions, pkg_map)
                     violations.extend(file_violations)
                     
                     # Check for forbidden API calls
@@ -84,6 +90,7 @@ class Rule(BaseRule):
                     continue
 
             details["violations"] = violations
+            details["used_distributions"] = sorted(used_distributions)
 
             if len(violations) > 0:
                 return False, f"Found {len(violations)} policy violation(s)", details
@@ -92,69 +99,71 @@ class Rule(BaseRule):
             
         except Exception as e:
             return False, f"Policy check failed: {str(e)}", details
+
+    def _top_level_import_to_distributions(self, pkg_map: Dict[str, List[str]], module_name: str) -> List[str]:
+        """Map an import name to *all* candidate distribution names.
+
+        importlib.metadata.packages_distributions() is many-to-many, so we do NOT
+        pick [0]. We return the full candidate list.
+        """
+        top_level = module_name.split(".")[0]
+        try:
+            return list(pkg_map.get(top_level) or [])
+        except Exception:
+            return []
     
-    def _check_imports(
-        self, 
-        tree: ast.AST, 
-        file_path: Path, 
-        forbidden_modules: List[str],
-        forbidden_packages: List[str]
-    ) -> List[Dict[str, Any]]:
-        """Check for forbidden imports."""
-        violations = []
-        
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    module_name = alias.name
-                    
-                    # Check against forbidden modules
-                    if module_name in forbidden_modules:
-                        violations.append({
-                            "type": "forbidden_module",
-                            "file": str(file_path),
-                            "line": node.lineno,
-                            "module": module_name,
-                            "message": f"Forbidden module '{module_name}' imported"
-                        })
-                    
-                    # Check against forbidden packages (top-level package)
-                    package = module_name.split('.')[0]
-                    if package in forbidden_packages:
-                        violations.append({
-                            "type": "forbidden_package",
-                            "file": str(file_path),
-                            "line": node.lineno,
-                            "package": package,
-                            "message": f"Forbidden package '{package}' imported"
-                        })
-            
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    module_name = node.module
-                    
-                    # Check against forbidden modules
-                    if module_name in forbidden_modules:
-                        violations.append({
-                            "type": "forbidden_module",
-                            "file": str(file_path),
-                            "line": node.lineno,
-                            "module": module_name,
-                            "message": f"Forbidden module '{module_name}' imported"
-                        })
-                    
-                    # Check against forbidden packages
-                    package = module_name.split('.')[0]
-                    if package in forbidden_packages:
-                        violations.append({
-                            "type": "forbidden_package",
-                            "file": str(file_path),
-                            "line": node.lineno,
-                            "package": package,
-                            "message": f"Forbidden package '{package}' imported"
-                        })
-        
-        return violations
+   def _check_imports(
+    self,
+    tree: ast.AST,
+    file_path: Path,
+    forbidden_packages: Set[str],
+    used_distributions: Set[str],
+    pkg_map: Dict[str, List[str]]
+) -> List[Dict[str, Any]]:
+    """Collect used distributions and emit per-import violations.
+    forbidden_packages are distribution names (pip install names).
+    """
+    violations: List[Dict[str, Any]] = []
+    cache: dict[str, Set[str]] = {}  # optional per-file cache
+
+    def resolve_candidates(module_name: str) -> Set[str]:
+        top = module_name.split(".")[0]
+        if top not in cache:
+            cache[top] = set(self._top_level_import_to_distributions(pkg_map,top))
+        return cache[top]
+
+    def add_violation(line: int, module_name: str, forbidden: str) -> None:
+        violations.append({
+            "type": "forbidden_package",
+            "file": str(file_path),
+            "line": line,
+            "package": forbidden,
+            "import": module_name,
+            "message": f"Forbidden dependency '{forbidden}' is used (imported via '{module_name}')",
+        })
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                module_name = alias.name
+                candidates = resolve_candidates(module_name)
+                used_distributions.update(candidates)
+
+                hits = candidates & forbidden_packages
+                for forbidden in hits:
+                    add_violation(node.lineno, module_name, forbidden)
+
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            module_name = node.module
+            candidates = resolve_candidates(module_name)
+            used_distributions.update(candidates)
+
+            hits = candidates & forbidden_packages
+            for forbidden in hits:
+                add_violation(node.lineno, module_name, forbidden)
+
+    return violations
+
     
     def _check_api_calls(
         self, 

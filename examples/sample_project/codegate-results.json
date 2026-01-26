@@ -6,16 +6,16 @@
   },
   "summary": {
     "total": 5,
-    "passed": 2,
-    "failed": 3,
-    "success_rate": 40.0,
-    "duration": 9.94
+    "passed": 4,
+    "failed": 1,
+    "success_rate": 80.0,
+    "duration": 13.747
   },
   "results": [
     {
       "rule": "build_imports",
-      "passed": false,
-      "message": "Import failed: ModuleNotFoundError: No module named 'botom3'",
+      "passed": true,
+      "message": "Build and import checks passed",
       "details": {
         "phases": {
           "compilation": {
@@ -24,32 +24,31 @@
             "files_compiled": 3
           },
           "entrypoint_import": {
-            "success": false,
-            "error": "ModuleNotFoundError: No module named 'botom3'",
-            "module_imported": null,
-            "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/local/lib/python3.9/importlib/__init__.py\", line 127, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n  File \"<frozen importlib._bootstrap>\", line 1030, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1007, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 986, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 680, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 850, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 228, in _call_with_frames_removed\n  File \"/workspace/calculator.py\", line 6, in <module>\n    from botom3 import client\nModuleNotFoundError: No module named 'botom3'\n",
-            "stdout": ""
+            "success": true,
+            "error": null,
+            "module_imported": "calculator"
           }
         },
         "entry_point": "calculator.py",
         "import_timeout": 120
       },
-      "duration": 1.124
+      "duration": 1.442
     },
     {
       "rule": "unit_tests",
-      "passed": false,
-      "message": "Tests failed",
+      "passed": true,
+      "message": "All 3 tests passed with 86.0% coverage",
       "details": {
-        "test_directory": "/home/jihad/projects/codegate/examples/sample_project",
+        "test_directory": "./",
         "coverage_threshold": 80,
-        "tests_found": 1,
-        "tests_passed": 0,
+        "tests_found": 3,
+        "tests_passed": 3,
         "tests_failed": 0,
-        "coverage_percentage": 0.0,
-        "test_output": "============================= test session starts ==============================\nplatform linux -- Python 3.9.25, pytest-8.4.2, pluggy-1.6.0 -- /usr/local/bin/python\ncachedir: .pytest_cache\nrootdir: /workspace\nplugins: cov-7.0.0\ncollecting ... collected 0 items / 1 error\n\n==================================== ERRORS ====================================\n_____________________ ERROR collecting test_calculator.py ______________________\nImportError while importing test module '/workspace/test_calculator.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/local/lib/python3.9/importlib/__init__.py:127: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\ntest_calculator.py:5: in <module>\n    from calculator import add, multiply, greet\ncalculator.py:6: in <module>\n    from botom3 import client\nE   ModuleNotFoundError: No module named 'botom3'\n=========================== short test summary info ============================\nERROR test_calculator.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.35s ===============================\n"
+        "coverage_percentage": 86.0,
+        "test_files_found": 1,
+        "test_output": "============================= test session starts ==============================\nplatform linux -- Python 3.9.25, pytest-8.4.2, pluggy-1.6.0 -- /usr/local/bin/python\ncachedir: .pytest_cache\nrootdir: /workspace\nplugins: cov-7.0.0\ncollecting ... collected 3 items\n\ntest_calculator.py::test_add PASSED                                      [ 33%]\ntest_calculator.py::test_multiply PASSED                                 [ 66%]\ntest_calculator.py::test_greet PASSED                                    [100%]\n\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.9.25-final-0 ________________\n\nName                 Stmts   Miss  Cover\n----------------------------------------\n__init__.py              0      0   100%\ncalculator.py           10      3    70%\ntest_calculator.py      12      0   100%\n----------------------------------------\nTOTAL                   22      3    86%\n============================== 3 passed in 0.11s ===============================\n"
       },
-      "duration": 2.391
+      "duration": 1.873
     },
     {
       "rule": "security_sast",
@@ -63,7 +62,7 @@
         "low_severity": 0,
         "issues": []
       },
-      "duration": 1.81
+      "duration": 2.315
     },
     {
       "rule": "security_deps",
@@ -88,7 +87,7 @@
           }
         ]
       },
-      "duration": 4.309
+      "duration": 7.593
     },
     {
       "rule": "policy",
@@ -109,7 +108,7 @@
         "violations": [],
         "files_checked": 3
       },
-      "duration": 0.002
+      "duration": 0.006
     }
   ]
 }

@@ -4,7 +4,6 @@
 Environment:
   runtime_image: python:3.9-slim
   network_access: false
-  file_system_access: false
 
 project:
   path: ./

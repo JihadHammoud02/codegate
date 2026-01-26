@@ -138,8 +138,6 @@ class EvaluationRunner:
         # Extract Environment config from YAML
         runtime_image = environment.get("runtime_image")
         network_access = environment.get("network_access", False)
-        file_system_access = environment.get("file_system_access", False)
-        allowed_writing_paths = environment.get("allowed_writing_paths", [])
         system_dependencies = environment.get("system_dependencies", [])
         
         # Extract Project config from YAML
@@ -157,29 +155,25 @@ class EvaluationRunner:
         
         # Build deps image
         deps_image = None
-        if self.docker_runner.is_available():
-            try:
-                if self.verbose:
-                    print("\nBuilding Docker dependency image...")
-                
-                deps_image = self.docker_runner.build_deps_image(
-                    runtime_image=runtime_image,
-                    system_dependencies=system_dependencies,
-                    python_dependencies=python_dependencies,
-                    project_path=absolute_path
-                )
-                self._deps_image = deps_image
-                
-                if self.verbose:
-                    print(f"  Ready: {deps_image}\n")
-                    
-            except Exception as e:
-                if self.verbose:
-                    print(f"  Warning: Failed to build deps image: {e}")
-                    print("  Rules will attempt local execution.\n")
-        else:
+        try:
             if self.verbose:
-                print("\nWarning: Docker not available. Rules may fail.\n")
+                print("\nBuilding Docker dependency image...")
+            
+            deps_image = self.docker_runner.build_deps_image(
+                runtime_image=runtime_image,
+                system_dependencies=system_dependencies,
+                python_dependencies=python_dependencies,
+                project_path=absolute_path
+            )
+            self._deps_image = deps_image
+            
+            if self.verbose:
+                print(f"  Ready: {deps_image}\n")
+                
+        except Exception as e:
+            if self.verbose:
+                print(f"  Warning: Failed to build deps image: {e}")
+                print("  Rules will attempt local execution.\n")
         
         # Build artifact_info for rules
         artifact_info = {
@@ -190,8 +184,6 @@ class EvaluationRunner:
             # Environment settings from contract
             "runtime_image": runtime_image,
             "network_access": network_access,
-            "file_system_access": file_system_access,
-            "allowed_writing_paths": allowed_writing_paths,
             "system_dependencies": system_dependencies,
             
             # Project settings from contract
@@ -217,7 +209,7 @@ class EvaluationRunner:
         The rule's execute() method receives artifact_info which contains:
         - docker_runner: DockerRunner instance
         - deps_image: Pre-built image with all dependencies
-        - network_access, file_system_access: Sandbox settings
+        - network_access: Sandbox setting
         - project_path, entry_point, etc.
         
         The rule can use docker_runner.run_command() to execute

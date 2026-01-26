@@ -1,0 +1,99 @@
+{
+  "project": "big_project/cli.py",
+  "artifact": {
+    "type": "docker-container",
+    "path": "/home/jihad/projects/codegate/examples/big_project"
+  },
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "success_rate": 100.0,
+    "duration": 12.617
+  },
+  "results": [
+    {
+      "rule": "build_imports",
+      "passed": true,
+      "message": "Build and import checks passed",
+      "details": {
+        "phases": {
+          "compilation": {
+            "success": true,
+            "error": null,
+            "files_compiled": 12
+          },
+          "entrypoint_import": {
+            "success": true,
+            "error": null,
+            "module_imported": "big_project.cli"
+          }
+        },
+        "entry_point": "big_project/cli.py",
+        "import_timeout": 120
+      },
+      "duration": 2.601
+    },
+    {
+      "rule": "unit_tests",
+      "passed": true,
+      "message": "All 9 tests passed with 76.0% coverage",
+      "details": {
+        "test_directory": "./",
+        "coverage_threshold": 75,
+        "tests_found": 9,
+        "tests_passed": 9,
+        "tests_failed": 0,
+        "coverage_percentage": 76.0,
+        "test_files_found": 4,
+        "test_output": "otdir: /workspace\nconfigfile: pyproject.toml\nplugins: cov-7.0.0\ncollecting ... collected 9 items\n\nbig_project/tests/test_analyze.py::test_top_words_counts PASSED          [ 11%]\nbig_project/tests/test_analyze.py::test_top_words_n_non_positive PASSED  [ 22%]\nbig_project/tests/test_iterables.py::test_chunked_basic PASSED           [ 33%]\nbig_project/tests/test_iterables.py::test_chunked_size_must_be_positive PASSED [ 44%]\nbig_project/tests/test_stats.py::test_mean PASSED                        [ 55%]\nbig_project/tests/test_stats.py::test_mean_empty PASSED                  [ 66%]\nbig_project/tests/test_stats.py::test_variance PASSED                    [ 77%]\nbig_project/tests/test_tokenize.py::test_tokenize_basic PASSED           [ 88%]\nbig_project/tests/test_tokenize.py::test_tokenize_numbers_and_quotes PASSED [100%]\n\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.14-final-0 _______________\n\nName                                  Stmts   Miss  Cover\n---------------------------------------------------------\nbig_project/__init__.py                   1      0   100%\nbig_project/cli.py                       15     15     0%\nbig_project/external.py                   7      7     0%\nbig_project/math/stats.py                11      0   100%\nbig_project/tests/conftest.py             5      0   100%\nbig_project/tests/test_analyze.py         6      0   100%\nbig_project/tests/test_iterables.py       7      0   100%\nbig_project/tests/test_stats.py           9      0   100%\nbig_project/tests/test_tokenize.py        5      0   100%\nbig_project/text/analyze.py               9      0   100%\nbig_project/text/tokenize.py              8      1    88%\nbig_project/utils/iterables.py           14      0   100%\n---------------------------------------------------------\nTOTAL                                    97     23    76%\n============================== 9 passed in 0.10s ===============================\n"
+      },
+      "duration": 2.355
+    },
+    {
+      "rule": "security_sast",
+      "passed": true,
+      "message": "No security issues found",
+      "details": {
+        "scanner": "bandit",
+        "issues_found": 0,
+        "high_severity": 0,
+        "medium_severity": 0,
+        "low_severity": 0,
+        "issues": []
+      },
+      "duration": 1.596
+    },
+    {
+      "rule": "security_deps",
+      "passed": true,
+      "message": "No vulnerable dependencies found",
+      "details": {
+        "scanner": "pip-audit",
+        "dependencies_checked": 5,
+        "vulnerabilities_found": 0,
+        "vulnerable_packages": []
+      },
+      "duration": 4.206
+    },
+    {
+      "rule": "policy",
+      "passed": true,
+      "message": "No policy violations found",
+      "details": {
+        "forbidden_modules": [
+          "subprocess"
+        ],
+        "forbidden_packages": [],
+        "forbidden_apis": [
+          "os.system",
+          "eval",
+          "exec"
+        ],
+        "violations": [],
+        "files_checked": 12
+      },
+      "duration": 0.005
+    }
+  ]
+}

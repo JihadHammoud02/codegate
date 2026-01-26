@@ -51,15 +51,7 @@ class ContractSchema:
         if "network_access" in environment and not isinstance(environment["network_access"], bool):
             raise ValueError("'Environment.network_access' must be a boolean")
         
-        if "file_system_access" in environment and not isinstance(environment["file_system_access"], bool):
-            raise ValueError("'Environment.file_system_access' must be a boolean")
-        
-        if "allowed_writing_paths" in environment:
-            if not isinstance(environment["allowed_writing_paths"], list):
-                raise ValueError("'Environment.allowed_writing_paths' must be a list")
-        
-        if "system_dependencies" in environment:
-            if not isinstance(environment["system_dependencies"], list):
+        if "system_dependencies" in environment and not isinstance(environment["system_dependencies"], list):
                 raise ValueError("'Environment.system_dependencies' must be a list")
     
     def _validate_project(self, project: Any) -> None:
@@ -69,11 +61,14 @@ class ContractSchema:
         
         if "path" not in project:
             raise ValueError("'project' must have a 'path' field")
-        
-        # Validate optional fields
-        if "entry_point" in project and not isinstance(project["entry_point"], str):
+
+        if "entry_point" not in project:
+            raise ValueError("'project' must have an 'entry_point' field")
+
+        if "entry_point" not isinstance(project["entry_point"], str):
             raise ValueError("'project.entry_point' must be a string")
         
+        # Validate optional fields
         if "python_dependencies" in project:
             if not isinstance(project["python_dependencies"], list):
                 raise ValueError("'project.python_dependencies' must be a list")
@@ -83,9 +78,9 @@ class ContractSchema:
         if not isinstance(rules, dict):
             raise ValueError("'rules' must be a dictionary")
         
-        # Allow empty rules section - user can choose to run no rules
+        # Don't Allow empty rules section - user can choose to run no rules
         if len(rules) == 0:
-            return
+            raise ValueError("'rules' section cannot be empty")
         
         # Valid rule names - these are the available built-in rules
         valid_rules = {
@@ -103,7 +98,6 @@ class ContractSchema:
                 import warnings
                 warnings.warn(
                     f"Unknown rule '{rule_name}'. Valid built-in rules are: {', '.join(sorted(valid_rules))}. "
-                    f"This rule will be attempted but may fail if no implementation exists.",
                     UserWarning
                 )
             
@@ -131,24 +125,30 @@ class ContractSchema:
                     raise ValueError("'build_imports.import_timeout' must be an integer")
         
         elif rule_name == "unit_tests":
-            if "test_directory" in rule_config:
-                if not isinstance(rule_config["test_directory"], str):
-                    raise ValueError("'unit_tests.test_directory' must be a string")
+            if "test_directory" not in rule_config:
+                raise ValueError("'unit_tests' must have a 'test_directory' field")
+            if not isinstance(rule_config["test_directory"], str):
+                raise ValueError("'unit_tests.test_directory' must be a string")
             
             if "coverage_threshold" in rule_config:
                 if not isinstance(rule_config["coverage_threshold"], (int, float)):
                     raise ValueError("'unit_tests.coverage_threshold' must be a number")
         
         elif rule_name == "policy":
-            if "forbidden_modules" in rule_config:
-                if not isinstance(rule_config["forbidden_modules"], list):
-                    raise ValueError("'policy.forbidden_modules' must be a list")
-            
             if "forbidden_packages" in rule_config:
                 if not isinstance(rule_config["forbidden_packages"], list):
                     raise ValueError("'policy.forbidden_packages' must be a list")
+
+                # Ensure list of strings (distribution names)
+                for p in rule_config["forbidden_packages"]:
+                    if not isinstance(p, str):
+                        raise ValueError("'policy.forbidden_packages' must be a list of strings")
             
             if "forbidden_apis" in rule_config:
                 if not isinstance(rule_config["forbidden_apis"], list):
                     raise ValueError("'policy.forbidden_apis' must be a list")
+
+                for api in rule_config["forbidden_apis"]:
+                    if not isinstance(api, str):
+                        raise ValueError("'policy.forbidden_apis' must be a list of strings")
 

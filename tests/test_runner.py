@@ -20,16 +20,21 @@ def test_run_simple_contract():
         test_file.write_text("print('Hello, world!')\n")
         
         contract = {
-            "project": {
-                "name": "test-project"
+            "Environment": {
+                "runtime_image": "python:3.11-slim",
+                "network_access": False,
             },
-            "artifact": {
-                "type": "python-package",
-                "path": str(src_dir)
+            "project": {
+                "path": str(src_dir),
+                "entry_point": "test.py",
             },
             "rules": {
-                "syntax-check": True
-            }
+                # policy rule is local/static analysis and can run without Docker
+                "policy": {
+                    "enabled": True,
+                    "forbidden_apis": ["eval"],
+                }
+            },
         }
         
         runner = EvaluationRunner(verbose=False)
@@ -50,19 +55,22 @@ def test_run_disabled_rule():
         test_file.write_text("print('Hello')\n")
         
         contract = {
-            "project": {
-                "name": "test-project"
+            "Environment": {
+                "runtime_image": "python:3.11-slim",
+                "network_access": False,
             },
-            "artifact": {
-                "type": "python-package",
-                "path": str(src_dir)
+            "project": {
+                "path": str(src_dir),
+                "entry_point": "test.py",
             },
             "rules": {
-                "syntax-check": False
-            }
+                "policy": {
+                    "enabled": False,
+                }
+            },
         }
         
         runner = EvaluationRunner(verbose=False)
         results = runner.run(contract)
         
-        assert results["summary"]["total"] == 0
+    assert results["summary"]["total"] == 0

@@ -59,7 +59,6 @@ pip install -e ".[dev]"
 Environment:
   runtime_image: python:3.9-slim
   network_access: false
-  file_system_access: false
 
 project:
   path: ./
@@ -121,7 +120,6 @@ Defines *where* code is evaluated.
 Environment:
   runtime_image: python:3.10-slim
   network_access: false
-  allowed_writing_paths: ["/tmp"]
 ```
 
 **Failure example**

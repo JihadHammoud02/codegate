@@ -12,19 +12,18 @@ from codegate.contract.parser import ContractParser
 def test_parse_valid_contract():
     """Test parsing a valid contract."""
     contract_yaml = """
-project:
-  name: test-project
-  version: 1.0.0
+Environment:
+    runtime_image: python:3.11-slim
 
-artifact:
-  type: python-package
-  path: ./src
+project:
+    path: ./src
+    entry_point: main.py
 
 rules:
-  syntax-check: true
-  test-coverage:
-    enabled: true
-    min_coverage: 80
+    build_imports:
+        enabled: true
+    unit_tests:
+        enabled: false
 """
     
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
@@ -35,10 +34,11 @@ rules:
         parser = ContractParser()
         contract = parser.parse(contract_path)
         
-        assert contract["project"]["name"] == "test-project"
-        assert contract["artifact"]["type"] == "python-package"
-        assert "syntax-check" in contract["rules"]
-        assert contract["rules"]["test-coverage"]["min_coverage"] == 80
+        assert contract["Environment"]["runtime_image"] == "python:3.11-slim"
+        assert contract["project"]["path"].endswith("/src")
+        assert contract["project"]["entry_point"] == "main.py"
+        assert "build_imports" in contract["rules"]
+        assert contract["rules"]["build_imports"]["enabled"] is True
     finally:
         contract_path.unlink()
 
@@ -46,12 +46,11 @@ rules:
 def test_parse_missing_required_field():
     """Test parsing contract with missing required field."""
     contract_yaml = """
-project:
-  name: test-project
+Environment:
+    runtime_image: python:3.11-slim
 
-artifact:
-  type: python-package
-  path: ./src
+project:
+    path: ./src
 """
     
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:

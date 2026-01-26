@@ -17,7 +17,7 @@ class BaseRule(ABC):
             config: Rule configuration from contract
         """
         self.config = config
-        self.enabled = config.get("enabled", True)
+        self.enabled = config.get("enabled", False)
     
     @abstractmethod
     def execute(self, artifact_info: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
